@@ -60,21 +60,23 @@ document.addEventListener("DOMContentLoaded", function () {
     setStatus("Loading tasks...");
 
   fetch(`${API_BASE}/get.php?stdid=${STUDENT_ID}&key=${API_KEY}`)
-    .then(res => res.json())
-    .then(data => {
-      setStatus("");
-
-      if (data && Array.isArray(data.tasks)) {
-        data.tasks.forEach(task => {
-          renderTask(task);
-        });
-      } else {
-        setStatus("No tasks found.");
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch tasks");
       }
+      return response.json();
     })
-    .catch(() => {
-      setStatus("Failed to load tasks.", true);
-    });
+    .then(data => {
+  setStatus("");
+
+  if (data && data.tasks && Array.isArray(data.tasks)) {
+    data.tasks.forEach(task => renderTask(task));
+  } else if (data && data.message) {
+    setStatus(data.message);
+  } else {
+    setStatus("No tasks found.");
+  }
+})
 
 });
 
@@ -106,7 +108,12 @@ if (form) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: title })
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Failed to add task");
+        }
+        return response.json();
+      })
       .then(data => {
         if (data && data.task) {
           renderTask(data.task);
@@ -156,7 +163,12 @@ function renderTask(task) {
     setStatus("Deleting...");
 
     fetch(`${API_BASE}/delete.php?stdid=${STUDENT_ID}&key=${API_KEY}&id=${task.id}`)
-      .then(res => res.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Failed to delete task");
+        }
+        return response.json();
+      })
       .then(data => {
         if (data && data.success) {
           li.remove();
@@ -174,6 +186,7 @@ function renderTask(task) {
   li.appendChild(delBtn);
   list.appendChild(li);
 }
+// Hide subtitle & footer
 document.addEventListener("DOMContentLoaded", () => {
   const subtitle = document.querySelector(".app__subtitle");
   const footer = document.querySelector(".app__footer");
